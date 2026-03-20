@@ -1,0 +1,31 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "username": "admin",
+      "password": "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
+      "role": "admin",
+      "name": "Administrador",
+      "email": "admin@sistema.com",
+      "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "id": 2,
+      "username": "trabajador1",
+      "password": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+      "role": "trabajador",
+      "name": "Juan Pérez",
+      "email": "juan@empresa.com",
+      "createdAt": "2026-01-15T00:00:00Z"
+    },
+    {
+      "id": 3,
+      "username": "usuario1",
+      "password": "0a041b9462caa4a31bac3567e0b6e6fd9100787db2ab433d96f6d178cabfce90",
+      "role": "publico",
+      "name": "María García",
+      "email": "maria@correo.com",
+      "createdAt": "2026-02-10T00:00:00Z"
+    }
+  ]
+}

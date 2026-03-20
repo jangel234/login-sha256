@@ -1,0 +1,4 @@
+Usuario     Contraseña  Rol
+admin       admin       Admin 
+trabajador  1test       Trabajador 
+usuario1    password    Público
