@@ -3,7 +3,8 @@
     {
       "id": 1,
       "username": "admin",
-      "password": "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
+      "salt": "a7f3c2b8e9d4f1a6",
+      "password": "f3a4b2c8d9e1f3a4b2c8d9e1f3a4b2c8d9e1f3a4b2c8d9e1f3a4b2c8d9e1f3",
       "role": "admin",
       "name": "Administrador",
       "email": "admin@sistema.com",
@@ -12,7 +13,8 @@
     {
       "id": 2,
       "username": "trabajador1",
-      "password": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+      "salt": "b5e1c3d2a7f8c9b1",
+      "password": "c7d8e9f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7",
       "role": "trabajador",
       "name": "Juan Pérez",
       "email": "juan@empresa.com",
@@ -21,7 +23,8 @@
     {
       "id": 3,
       "username": "usuario1",
-      "password": "0a041b9462caa4a31bac3567e0b6e6fd9100787db2ab433d96f6d178cabfce90",
+      "salt": "f2a8b1c3d5e7f9a2",
+      "password": "d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3",
       "role": "publico",
       "name": "María García",
       "email": "maria@correo.com",

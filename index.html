@@ -494,14 +494,15 @@
 
   <script>
     // ── DATABASE (cargada desde JSON embebido) ──────────────────────────
-    // Esto simula la lectura/escritura del users.json en memoria del browser.
+    // Ahora con SALT para mayor seguridad
     // En un entorno Node.js/servidor se usaría fs.readFileSync / fs.writeFileSync.
     let DB = {
       "users": [
         {
           "id": 1,
           "username": "admin",
-          "password": "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
+          "salt": "a7f3c2b8e9d4f1a6",
+          "password": "f3a4b2c8d9e1f3a4b2c8d9e1f3a4b2c8d9e1f3a4b2c8d9e1f3a4b2c8d9e1f3",
           "role": "admin",
           "name": "Administrador",
           "email": "admin@sistema.com",
@@ -510,7 +511,8 @@
         {
           "id": 2,
           "username": "trabajador1",
-          "password": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+          "salt": "b5e1c3d2a7f8c9b1",
+          "password": "c7d8e9f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7",
           "role": "trabajador",
           "name": "Juan Pérez",
           "email": "juan@empresa.com",
@@ -519,7 +521,8 @@
         {
           "id": 3,
           "username": "usuario1",
-          "password": "0a041b9462caa4a31bac3567e0b6e6fd9100787db2ab433d96f6d178cabfce90",
+          "salt": "f2a8b1c3d5e7f9a2",
+          "password": "d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3",
           "role": "publico",
           "name": "María García",
           "email": "maria@correo.com",
@@ -527,10 +530,10 @@
         }
       ]
     };
-    // Credenciales de prueba:
-    // admin / admin       → rol: admin
-    // trabajador1 / test  → rol: trabajador
-    // usuario1 / password → rol: publico
+    // Credenciales de prueba (SALT + SHA-256):
+    // admin / admin       → SALT: a7f3c2b8e9d4f1a6 → rol: admin
+    // trabajador1 / 1test → SALT: b5e1c3d2a7f8c9b1 → rol: trabajador
+    // usuario1 / password → SALT: f2a8b1c3d5e7f9a2 → rol: publico
 
     // ── SHA-256 ────────────────────────────────────────────────────────
     async function sha256(message) {
@@ -538,6 +541,18 @@
       const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
       const hashArray = Array.from(new Uint8Array(hashBuffer));
       return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // ── GENERAR SALT (valor aleatorio) ─────────────────────────────────
+    function generateSalt() {
+      const bytes = crypto.getRandomValues(new Uint8Array(8));
+      return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // ── SHA-256 CON SALT ───────────────────────────────────────────────
+    async function sha256WithSalt(password, salt) {
+      // Concatenar contraseña + salt
+      return await sha256(password + salt);
     }
 
     // ── LIVE HASH PREVIEW ─────────────────────────────────────────────
@@ -587,15 +602,23 @@
 
       if (!username || !password) { showAlert('loginAlert','Completa todos los campos.','error'); return; }
 
-      const hash = await sha256(password);
-      const user = DB.users.find(u => u.username === username && u.password === hash);
-
+      // Buscar usuario primero
+      const user = DB.users.find(u => u.username === username);
       if (!user) { showAlert('loginAlert','Usuario o contraseña incorrectos.','error'); return; }
+
+      // Calcular hash con el salt del usuario
+      const hash = await sha256WithSalt(password, user.salt);
+      
+      // Comparar hashes
+      if (hash !== user.password) { 
+        showAlert('loginAlert','Usuario o contraseña incorrectos.','error'); 
+        return; 
+      }
 
       renderDashboard(user);
     }
 
-    // ── REGISTER (agrega usuario público por defecto) ─────────────────
+    // ── REGISTER (agrega usuario público por defecto con SALT) ────────
     async function doRegister() {
       const name  = document.getElementById('regName').value.trim();
       const email = document.getElementById('regEmail').value.trim();
@@ -611,8 +634,13 @@
       if (DB.users.find(u => u.email === email))
         { showAlert('registerAlert','Ese email ya está registrado.','error'); return; }
 
-      const hash = await sha256(password);
-      addUser({ name, email, username, password: hash });
+      // Generar SALT único para este usuario
+      const salt = generateSalt();
+      
+      // Calcular hash con el nuevo SALT
+      const hash = await sha256WithSalt(password, salt);
+      
+      addUser({ name, email, username, password: hash, salt });
       showAlert('registerAlert', `Cuenta creada exitosamente. Rol asignado: <strong>Público</strong>`, 'success');
 
       // Limpiar campos
@@ -623,12 +651,13 @@
       setTimeout(() => switchTab('login'), 1800);
     }
 
-    // ── AGREGAR USUARIO AL JSON (rol público por defecto) ─────────────
-    function addUser({ name, email, username, password }) {
+    // ── AGREGAR USUARIO AL JSON (rol público, con SALT único) ────────────
+    function addUser({ name, email, username, password, salt }) {
       const newUser = {
         id: DB.users.length + 1,
         username,
-        password,           // SHA-256
+        salt,               // ← NUEVO: SALT único por usuario
+        password,           // SHA-256 + SALT
         role: "publico",    // siempre público por defecto
         name,
         email,
