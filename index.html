@@ -3,9 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sistema de Acceso</title>
+  <title>Sistema de Acceso | SHA-256 + Salt</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     :root {
       --bg: #0a0a0f;
       --surface: #111118;
@@ -21,8 +27,6 @@
       --public-color: #43e97b;
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
     body {
       background: var(--bg);
       color: var(--text);
@@ -35,7 +39,7 @@
       position: relative;
     }
 
-    /* Animated background grid */
+    /* fondo animado */
     body::before {
       content: '';
       position: fixed;
@@ -53,7 +57,6 @@
       100% { transform: translateY(40px); }
     }
 
-    /* Glowing orbs */
     .orb {
       position: fixed;
       border-radius: 50%;
@@ -71,23 +74,23 @@
       50% { transform: translateY(-20px) scale(1.05); }
     }
 
-    /* Main container */
     .wrapper {
       position: relative;
       z-index: 1;
       width: 100%;
-      max-width: 460px;
+      max-width: 480px;
       padding: 20px;
     }
 
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 40px;
+      border-radius: 24px;
+      padding: 36px 32px;
       position: relative;
       overflow: hidden;
-      animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      backdrop-filter: blur(2px);
     }
 
     @keyframes slideUp {
@@ -103,10 +106,9 @@
       background: linear-gradient(90deg, transparent, var(--accent), transparent);
     }
 
-    /* Header */
     .header {
       text-align: center;
-      margin-bottom: 36px;
+      margin-bottom: 32px;
     }
 
     .logo {
@@ -116,33 +118,32 @@
       width: 56px;
       height: 56px;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
-      border-radius: 16px;
-      margin-bottom: 16px;
-      font-size: 24px;
+      border-radius: 18px;
+      margin-bottom: 18px;
+      font-size: 26px;
+      box-shadow: 0 8px 20px rgba(108,99,255,0.2);
     }
 
     .header h1 {
       font-family: 'Syne', sans-serif;
-      font-size: 1.6rem;
+      font-size: 1.7rem;
       font-weight: 800;
       letter-spacing: -0.02em;
-      color: var(--text);
     }
 
     .header p {
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       color: var(--muted);
       margin-top: 6px;
       letter-spacing: 0.05em;
       text-transform: uppercase;
     }
 
-    /* Tabs */
     .tabs {
       display: flex;
-      gap: 4px;
+      gap: 6px;
       background: var(--surface2);
-      border-radius: 10px;
+      border-radius: 14px;
       padding: 4px;
       margin-bottom: 28px;
     }
@@ -156,59 +157,57 @@
       font-family: 'DM Mono', monospace;
       font-size: 0.75rem;
       cursor: pointer;
-      border-radius: 7px;
+      border-radius: 10px;
       transition: all 0.2s;
-      letter-spacing: 0.05em;
+      font-weight: 500;
     }
 
     .tab.active {
       background: var(--accent);
-      color: #fff;
+      color: white;
+      box-shadow: 0 2px 6px rgba(108,99,255,0.3);
     }
 
-    /* Forms */
     .form-panel { display: none; }
-    .form-panel.active { display: block; animation: fadeIn 0.3s ease; }
+    .form-panel.active { display: block; animation: fadeIn 0.25s ease; }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateX(10px); }
+      from { opacity: 0; transform: translateX(6px); }
       to { opacity: 1; transform: translateX(0); }
     }
 
     .field {
-      margin-bottom: 16px;
+      margin-bottom: 18px;
     }
 
     label {
       display: block;
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       color: var(--muted);
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
+      font-weight: 500;
     }
 
     input {
       width: 100%;
       background: var(--surface2);
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 12px 16px;
       color: var(--text);
       font-family: 'DM Mono', monospace;
       font-size: 0.85rem;
       outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      transition: 0.2s;
     }
 
     input:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(108,99,255,0.12);
+      box-shadow: 0 0 0 3px rgba(108,99,255,0.2);
     }
 
-    input::placeholder { color: var(--muted); }
-
-    /* Password wrapper */
     .pw-wrap {
       position: relative;
     }
@@ -222,73 +221,52 @@
       border: none;
       color: var(--muted);
       cursor: pointer;
-      font-size: 14px;
-      padding: 0;
+      font-size: 16px;
     }
 
-    /* Hash preview */
-    .hash-preview {
-      background: var(--surface2);
-      border: 1px dashed var(--border);
-      border-radius: 8px;
-      padding: 8px 12px;
-      margin-top: 6px;
-      font-size: 0.65rem;
-      color: var(--muted);
-      word-break: break-all;
-      transition: all 0.3s;
-    }
-    .hash-preview.has-value { color: var(--accent3); border-color: rgba(67,233,123,0.3); }
-    .hash-label { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
-
-    /* Button */
     .btn {
       width: 100%;
       padding: 13px;
       border: none;
-      border-radius: 10px;
+      border-radius: 14px;
       font-family: 'Syne', sans-serif;
       font-size: 0.9rem;
       font-weight: 700;
       cursor: pointer;
-      transition: all 0.2s;
-      letter-spacing: 0.04em;
-      margin-top: 8px;
+      transition: 0.2s;
+      margin-top: 10px;
     }
 
     .btn-primary {
       background: linear-gradient(135deg, var(--accent), #8b5cf6);
-      color: #fff;
+      color: white;
+      box-shadow: 0 2px 8px rgba(108,99,255,0.3);
     }
-    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(108,99,255,0.35); }
-    .btn-primary:active { transform: translateY(0); }
-
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(108,99,255,0.4); }
     .btn-secondary {
       background: var(--surface2);
       color: var(--text);
       border: 1px solid var(--border);
-      margin-top: 8px;
     }
     .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
 
-    /* Alert */
     .alert {
       padding: 12px 16px;
-      border-radius: 10px;
-      font-size: 0.78rem;
-      margin-bottom: 16px;
+      border-radius: 14px;
+      font-size: 0.75rem;
+      margin-bottom: 20px;
       display: none;
-      animation: fadeIn 0.3s ease;
+      gap: 8px;
+      align-items: center;
     }
-    .alert.show { display: flex; align-items: center; gap: 8px; }
-    .alert-error { background: rgba(255,101,132,0.1); border: 1px solid rgba(255,101,132,0.3); color: var(--accent2); }
-    .alert-success { background: rgba(67,233,123,0.1); border: 1px solid rgba(67,233,123,0.3); color: var(--accent3); }
-    .alert-info { background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.3); color: var(--accent); }
+    .alert.show { display: flex; }
+    .alert-error { background: rgba(255,101,132,0.12); border: 1px solid rgba(255,101,132,0.4); color: var(--accent2); }
+    .alert-success { background: rgba(67,233,123,0.12); border: 1px solid rgba(67,233,123,0.4); color: var(--accent3); }
+    .alert-info { background: rgba(108,99,255,0.12); border: 1px solid rgba(108,99,255,0.4); color: var(--accent); }
 
-    /* Dashboard */
     .dashboard {
       display: none;
-      animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: slideUp 0.5s ease;
     }
     .dashboard.active { display: block; }
 
@@ -296,29 +274,29 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 28px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
     }
-
-    .dash-title { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; }
+    .dash-title { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; }
 
     .role-badge {
-      padding: 6px 14px;
-      border-radius: 100px;
+      padding: 5px 14px;
+      border-radius: 40px;
       font-size: 0.7rem;
-      font-weight: 600;
+      font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
-    .badge-admin { background: rgba(255,101,132,0.15); color: var(--admin-color); border: 1px solid rgba(255,101,132,0.3); }
-    .badge-trabajador { background: rgba(108,99,255,0.15); color: var(--worker-color); border: 1px solid rgba(108,99,255,0.3); }
-    .badge-publico { background: rgba(67,233,123,0.15); color: var(--public-color); border: 1px solid rgba(67,233,123,0.3); }
+    .badge-admin { background: rgba(255,101,132,0.18); color: var(--admin-color); border: 1px solid rgba(255,101,132,0.4); }
+    .badge-trabajador { background: rgba(108,99,255,0.18); color: var(--worker-color); border: 1px solid rgba(108,99,255,0.4); }
+    .badge-publico { background: rgba(67,233,123,0.18); color: var(--public-color); border: 1px solid rgba(67,233,123,0.4); }
 
     .user-info {
       background: var(--surface2);
       border: 1px solid var(--border);
-      border-radius: 14px;
+      border-radius: 20px;
       padding: 20px;
-      margin-bottom: 20px;
+      margin-bottom: 22px;
     }
 
     .info-row {
@@ -329,33 +307,30 @@
       font-size: 0.8rem;
     }
     .info-row:last-child { border-bottom: none; }
-    .info-row span:first-child { color: var(--muted); }
-    .info-row span:last-child { color: var(--text); }
+    .info-row span:first-child { color: var(--muted); font-weight: 400; }
 
     .perms-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 20px;
+      gap: 12px;
+      margin-bottom: 24px;
     }
-
     .perm-card {
       background: var(--surface2);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px;
+      border-radius: 16px;
+      padding: 12px;
       font-size: 0.75rem;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
+      font-weight: 500;
     }
-    .perm-card.granted { border-color: rgba(67,233,123,0.3); }
-    .perm-card.denied { opacity: 0.4; }
-    .perm-icon { font-size: 16px; }
+    .perm-card.granted { border-left: 3px solid var(--accent3); }
+    .perm-card.denied { opacity: 0.5; }
 
-    /* Users list (admin only) */
     .users-list { margin-top: 20px; }
-    .users-list h3 { font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 700; margin-bottom: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .users-list h3 { font-size: 0.85rem; font-weight: 700; margin-bottom: 14px; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; }
 
     .user-item {
       display: flex;
@@ -364,31 +339,22 @@
       padding: 12px 16px;
       background: var(--surface2);
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 14px;
       margin-bottom: 8px;
-      font-size: 0.78rem;
     }
-    .user-item-left { display: flex; align-items: center; gap: 10px; }
+    .user-item-left { display: flex; align-items: center; gap: 12px; }
     .user-avatar {
-      width: 32px; height: 32px;
-      border-radius: 8px;
+      width: 36px; height: 36px;
+      border-radius: 12px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 14px;
-      font-weight: 700;
+      font-weight: 800;
       font-family: 'Syne', sans-serif;
     }
     .av-admin { background: rgba(255,101,132,0.2); color: var(--admin-color); }
     .av-trabajador { background: rgba(108,99,255,0.2); color: var(--worker-color); }
     .av-publico { background: rgba(67,233,123,0.2); color: var(--public-color); }
 
-    .user-meta { display: flex; flex-direction: column; gap: 2px; }
-    .user-meta strong { color: var(--text); }
-    .user-meta small { color: var(--muted); font-size: 0.68rem; }
-
-    /* Scrollbar */
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: var(--surface); }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .user-meta small { color: var(--muted); font-size: 0.65rem; }
   </style>
 </head>
 <body>
@@ -400,42 +366,39 @@
     <!-- LOGIN CARD -->
     <div class="card" id="loginCard">
       <div class="header">
-        <div class="logo">🔐</div>
-        <h1>Sistema de Acceso</h1>
-        <p>Autenticación SHA-256 · Multirol</p>
+        <div class="logo">⚡</div>
+        <h1>Acceso Seguro</h1>
+        <p>SHA-256 + SALT · Multirole</p>
       </div>
 
       <div class="tabs">
-        <button class="tab active" onclick="switchTab('login')">Iniciar Sesión</button>
-        <button class="tab" onclick="switchTab('register')">Registrarse</button>
+        <button class="tab active" id="tabLoginBtn" onclick="switchTab('login')">Iniciar Sesión</button>
+        <button class="tab" id="tabRegBtn" onclick="switchTab('register')">Registrarse</button>
       </div>
 
       <!-- LOGIN FORM -->
       <div class="form-panel active" id="loginPanel">
         <div id="loginAlert" class="alert"></div>
-
         <div class="field">
-          <label>Usuario</label>
-          <input type="text" id="loginUser" placeholder="nombre_usuario" autocomplete="off"/>
+          <label>👤 Usuario</label>
+          <input type="text" id="loginUser" placeholder="admin / trabajador1 / usuario1" autocomplete="off"/>
         </div>
-
         <div class="field">
-          <label>Contraseña</label>
+          <label>🔒 Contraseña</label>
           <div class="pw-wrap">
             <input type="password" id="loginPass" placeholder="••••••••" />
-            <button class="pw-toggle" onclick="togglePw('loginPass')">👁</button>
+            <button class="pw-toggle" onclick="togglePw('loginPass')">👁️</button>
           </div>
-          <!-- <div class="hash-label" style="margin-top:6px;">Hash SHA-256:</div> -->
-          <!-- <div class="hash-preview" id="loginHashPreview">—</div> -->
         </div>
-
-        <button class="btn btn-primary" onclick="doLogin()">Ingresar →</button>
+        <button class="btn btn-primary" onclick="doLogin()">Acceder →</button>
+        <div style="margin-top: 16px; font-size:0.65rem; text-align:center; color:var(--muted);">
+          📌 pruebas: admin / admin | trabajador1 / 1test | usuario1 / password
+        </div>
       </div>
 
       <!-- REGISTER FORM -->
       <div class="form-panel" id="registerPanel">
         <div id="registerAlert" class="alert"></div>
-
         <div class="field">
           <label>Nombre completo</label>
           <input type="text" id="regName" placeholder="Ej. Ana López"/>
@@ -452,27 +415,23 @@
           <label>Contraseña</label>
           <div class="pw-wrap">
             <input type="password" id="regPass" placeholder="Mínimo 6 caracteres"/>
-            <button class="pw-toggle" onclick="togglePw('regPass')">👁</button>
+            <button class="pw-toggle" onclick="togglePw('regPass')">👁️</button>
           </div>
-          <!-- <div class="hash-label" style="margin-top:6px;">Hash SHA-256:</div> -->
-          <!-- <div class="hash-preview" id="regHashPreview">—</div> -->
         </div>
         <p style="font-size:0.7rem;color:var(--muted);margin-bottom:12px;">
-          ℹ️ Las cuentas nuevas se crean con rol <strong style="color:var(--public-color)">Público</strong> por defecto.
+          ℹ️ Nuevas cuentas → rol <strong style="color:var(--public-color)">Público</strong> (solo lectura)
         </p>
-        <button class="btn btn-primary" onclick="doRegister()">Crear Cuenta →</button>
+        <button class="btn btn-primary" onclick="doRegister()">Crear cuenta →</button>
       </div>
     </div>
 
-    <!-- DASHBOARD CARD -->
+    <!-- DASHBOARD -->
     <div class="card dashboard" id="dashCard">
       <div class="dash-header">
         <div class="dash-title" id="dashTitle">Panel</div>
         <span class="role-badge" id="dashBadge"></span>
       </div>
-
       <div id="dashAlert" class="alert"></div>
-
       <div class="user-info">
         <div class="info-row"><span>Nombre</span><span id="dName">—</span></div>
         <div class="info-row"><span>Usuario</span><span id="dUser">—</span></div>
@@ -484,58 +443,16 @@
       <div class="perms-grid" id="permsGrid"></div>
 
       <div class="users-list" id="adminPanel" style="display:none">
-        <h3>👥 Usuarios Registrados</h3>
+        <h3>👥 Usuarios registrados</h3>
         <div id="usersList"></div>
       </div>
 
-      <button class="btn btn-secondary" onclick="doLogout()">← Cerrar Sesión</button>
+      <button class="btn btn-secondary" onclick="doLogout()">← Cerrar sesión</button>
     </div>
   </div>
 
   <script>
-    // ── DATABASE (cargada desde JSON embebido) ──────────────────────────
-    // Ahora con SALT para mayor seguridad
-    // En un entorno Node.js/servidor se usaría fs.readFileSync / fs.writeFileSync.
-    let DB = {
-      "users": [
-        {
-          "id": 1,
-          "username": "admin",
-          "salt": "a7f3c2b8e9d4f1a6",
-          "password": "f3a4b2c8d9e1f3a4b2c8d9e1f3a4b2c8d9e1f3a4b2c8d9e1f3a4b2c8d9e1f3",
-          "role": "admin",
-          "name": "Administrador",
-          "email": "admin@sistema.com",
-          "createdAt": "2026-01-01T00:00:00Z"
-        },
-        {
-          "id": 2,
-          "username": "trabajador1",
-          "salt": "b5e1c3d2a7f8c9b1",
-          "password": "c7d8e9f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7",
-          "role": "trabajador",
-          "name": "Juan Pérez",
-          "email": "juan@empresa.com",
-          "createdAt": "2026-01-15T00:00:00Z"
-        },
-        {
-          "id": 3,
-          "username": "usuario1",
-          "salt": "f2a8b1c3d5e7f9a2",
-          "password": "d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3",
-          "role": "publico",
-          "name": "María García",
-          "email": "maria@correo.com",
-          "createdAt": "2026-02-10T00:00:00Z"
-        }
-      ]
-    };
-    // Credenciales de prueba (SALT + SHA-256):
-    // admin / admin       → SALT: a7f3c2b8e9d4f1a6 → rol: admin
-    // trabajador1 / 1test → SALT: b5e1c3d2a7f8c9b1 → rol: trabajador
-    // usuario1 / password → SALT: f2a8b1c3d5e7f9a2 → rol: publico
-
-    // ── SHA-256 ────────────────────────────────────────────────────────
+    // ---------- SHA-256 helper ----------
     async function sha256(message) {
       const msgBuffer = new TextEncoder().encode(message);
       const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
@@ -543,163 +460,199 @@
       return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    // ── GENERAR SALT (valor aleatorio) ─────────────────────────────────
+    async function sha256WithSalt(password, salt) {
+      return await sha256(password + salt);
+    }
+
     function generateSalt() {
       const bytes = crypto.getRandomValues(new Uint8Array(8));
       return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    // ── SHA-256 CON SALT ───────────────────────────────────────────────
-    async function sha256WithSalt(password, salt) {
-      // Concatenar contraseña + salt
-      return await sha256(password + salt);
+    // ---------- BASE DE DATOS (se corregirán los hashes en init) ----------
+    let DB = {
+      users: [
+        {
+          id: 1,
+          username: "admin",
+          salt: "a7f3c2b8e9d4f1a6",
+          password: "dummy",   // se recalculará
+          role: "admin",
+          name: "Administrador",
+          email: "admin@sistema.com",
+          createdAt: "2026-01-01T00:00:00Z"
+        },
+        {
+          id: 2,
+          username: "trabajador1",
+          salt: "b5e1c3d2a7f8c9b1",
+          password: "dummy",
+          role: "trabajador",
+          name: "Juan Pérez",
+          email: "juan@empresa.com",
+          createdAt: "2026-01-15T00:00:00Z"
+        },
+        {
+          id: 3,
+          username: "usuario1",
+          salt: "f2a8b1c3d5e7f9a2",
+          password: "dummy",
+          role: "publico",
+          name: "María García",
+          email: "maria@correo.com",
+          createdAt: "2026-02-10T00:00:00Z"
+        }
+      ]
+    };
+
+    // Credenciales reales de prueba (para corregir hashes)
+    const DEMO_CREDENTIALS = {
+      "admin": { plain: "admin", role: "admin" },
+      "trabajador1": { plain: "1test", role: "trabajador" },
+      "usuario1": { plain: "password", role: "publico" }
+    };
+
+    // ----- CORREGIR HASHES CON LOS SALT Y PASSWORDS REALES -----
+    async function fixDemoPasswords() {
+      for (let user of DB.users) {
+        const demo = DEMO_CREDENTIALS[user.username];
+        if (demo && demo.plain && user.salt) {
+          const correctHash = await sha256WithSalt(demo.plain, user.salt);
+          user.password = correctHash;
+        }
+      }
     }
 
-    // ── LIVE HASH PREVIEW ─────────────────────────────────────────────
-    document.getElementById('loginPass').addEventListener('input', async e => {
-      const el = document.getElementById('loginHashPreview');
-      if (!e.target.value) { el.textContent = '—'; el.className = 'hash-preview'; return; }
-      const h = await sha256(e.target.value);
-      el.textContent = h;
-      el.className = 'hash-preview has-value';
-    });
+    // ---- UTILS ----
+    function showAlert(id, msg, type) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.className = `alert alert-${type} show`;
+      el.innerHTML = (type==='error'?'✗ ':type==='success'?'✓ ': 'ℹ️ ') + msg;
+    }
+    function hideAlert(id) {
+      const el = document.getElementById(id);
+      if (el) el.className = 'alert';
+    }
 
-    document.getElementById('regPass').addEventListener('input', async e => {
-      const el = document.getElementById('regHashPreview');
-      if (!e.target.value) { el.textContent = '—'; el.className = 'hash-preview'; return; }
-      const h = await sha256(e.target.value);
-      el.textContent = h;
-      el.className = 'hash-preview has-value';
-    });
-
-    // ── TABS ──────────────────────────────────────────────────────────
     function switchTab(tab) {
-      document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (i===0 && tab==='login') || (i===1 && tab==='register')));
-      document.getElementById('loginPanel').classList.toggle('active', tab==='login');
-      document.getElementById('registerPanel').classList.toggle('active', tab==='register');
-      hideAlert('loginAlert'); hideAlert('registerAlert');
+      const loginBtn = document.querySelectorAll('.tab')[0];
+      const regBtn = document.querySelectorAll('.tab')[1];
+      if (tab === 'login') {
+        loginBtn.classList.add('active');
+        regBtn.classList.remove('active');
+        document.getElementById('loginPanel').classList.add('active');
+        document.getElementById('registerPanel').classList.remove('active');
+        hideAlert('loginAlert');
+      } else {
+        regBtn.classList.add('active');
+        loginBtn.classList.remove('active');
+        document.getElementById('registerPanel').classList.add('active');
+        document.getElementById('loginPanel').classList.remove('active');
+        hideAlert('registerAlert');
+      }
     }
 
     function togglePw(id) {
-      const el = document.getElementById(id);
-      el.type = el.type === 'password' ? 'text' : 'password';
+      const inp = document.getElementById(id);
+      inp.type = inp.type === 'password' ? 'text' : 'password';
     }
 
-    // ── ALERTS ────────────────────────────────────────────────────────
-    function showAlert(id, msg, type) {
-      const el = document.getElementById(id);
-      el.className = `alert alert-${type} show`;
-      el.innerHTML = (type==='error'?'✗':type==='success'?'✓':'ℹ') + ' ' + msg;
-    }
-    function hideAlert(id) {
-      document.getElementById(id).className = 'alert';
-    }
-
-    // ── LOGIN ─────────────────────────────────────────────────────────
+    // ----- LOGIN -----
     async function doLogin() {
       const username = document.getElementById('loginUser').value.trim();
       const password = document.getElementById('loginPass').value;
-
-      if (!username || !password) { showAlert('loginAlert','Completa todos los campos.','error'); return; }
-
-      // Buscar usuario primero
-      const user = DB.users.find(u => u.username === username);
-      if (!user) { showAlert('loginAlert','Usuario o contraseña incorrectos.','error'); return; }
-
-      // Calcular hash con el salt del usuario
-      const hash = await sha256WithSalt(password, user.salt);
-      
-      // Comparar hashes
-      if (hash !== user.password) { 
-        showAlert('loginAlert','Usuario o contraseña incorrectos.','error'); 
-        return; 
+      if (!username || !password) {
+        showAlert('loginAlert', 'Completa usuario y contraseña', 'error');
+        return;
       }
-
+      const user = DB.users.find(u => u.username === username);
+      if (!user) {
+        showAlert('loginAlert', 'Credenciales inválidas', 'error');
+        return;
+      }
+      const computedHash = await sha256WithSalt(password, user.salt);
+      if (computedHash !== user.password) {
+        showAlert('loginAlert', 'Usuario o contraseña incorrectos', 'error');
+        return;
+      }
       renderDashboard(user);
     }
 
-    // ── REGISTER (agrega usuario público por defecto con SALT) ────────
+    // ----- REGISTRO (nuevo usuario público con SALT) -----
     async function doRegister() {
-      const name  = document.getElementById('regName').value.trim();
+      const name = document.getElementById('regName').value.trim();
       const email = document.getElementById('regEmail').value.trim();
       const username = document.getElementById('regUser').value.trim();
       const password = document.getElementById('regPass').value;
 
-      if (!name || !email || !username || !password)
-        { showAlert('registerAlert','Completa todos los campos.','error'); return; }
-      if (password.length < 6)
-        { showAlert('registerAlert','La contraseña debe tener al menos 6 caracteres.','error'); return; }
-      if (DB.users.find(u => u.username === username))
-        { showAlert('registerAlert','Ese nombre de usuario ya existe.','error'); return; }
-      if (DB.users.find(u => u.email === email))
-        { showAlert('registerAlert','Ese email ya está registrado.','error'); return; }
+      if (!name || !email || !username || !password) {
+        showAlert('registerAlert', 'Todos los campos son obligatorios', 'error');
+        return;
+      }
+      if (password.length < 6) {
+        showAlert('registerAlert', 'La contraseña debe tener mínimo 6 caracteres', 'error');
+        return;
+      }
+      if (DB.users.find(u => u.username === username)) {
+        showAlert('registerAlert', 'Nombre de usuario ya existe', 'error');
+        return;
+      }
+      if (DB.users.find(u => u.email === email)) {
+        showAlert('registerAlert', 'Email ya registrado', 'error');
+        return;
+      }
 
-      // Generar SALT único para este usuario
       const salt = generateSalt();
-      
-      // Calcular hash con el nuevo SALT
       const hash = await sha256WithSalt(password, salt);
-      
-      addUser({ name, email, username, password: hash, salt });
-      showAlert('registerAlert', `Cuenta creada exitosamente. Rol asignado: <strong>Público</strong>`, 'success');
-
-      // Limpiar campos
-      ['regName','regEmail','regUser','regPass'].forEach(id => document.getElementById(id).value='');
-      document.getElementById('regHashPreview').textContent='—';
-      document.getElementById('regHashPreview').className='hash-preview';
-
-      setTimeout(() => switchTab('login'), 1800);
-    }
-
-    // ── AGREGAR USUARIO AL JSON (rol público, con SALT único) ────────────
-    function addUser({ name, email, username, password, salt }) {
       const newUser = {
         id: DB.users.length + 1,
         username,
-        salt,               // ← NUEVO: SALT único por usuario
-        password,           // SHA-256 + SALT
-        role: "publico",    // siempre público por defecto
+        salt,
+        password: hash,
+        role: "publico",
         name,
         email,
         createdAt: new Date().toISOString()
       };
       DB.users.push(newUser);
-
-      // Mostrar JSON actualizado en consola (simulando escritura al archivo)
-      // console.log("📁 users.json actualizado:");
-      // console.log(JSON.stringify(DB, null, 2));
-
-      return newUser;
+      showAlert('registerAlert', `Cuenta creada exitosamente con rol Público`, 'success');
+      // limpiar campos
+      document.getElementById('regName').value = '';
+      document.getElementById('regEmail').value = '';
+      document.getElementById('regUser').value = '';
+      document.getElementById('regPass').value = '';
+      setTimeout(() => switchTab('login'), 1500);
     }
 
-    // ── DASHBOARD ─────────────────────────────────────────────────────
+    // ----- PERMISOS POR ROL -----
     const PERMS = {
       admin: [
-        { icon:'👁', label:'Ver contenido', granted:true },
+        { icon:'🔍', label:'Ver todo', granted:true },
         { icon:'✏️', label:'Editar contenido', granted:true },
         { icon:'👥', label:'Gestionar usuarios', granted:true },
-        { icon:'⚙️', label:'Configuración', granted:true },
+        { icon:'⚙️', label:'Configuración sistema', granted:true },
       ],
       trabajador: [
-        { icon:'👁', label:'Ver contenido', granted:true },
+        { icon:'🔍', label:'Ver contenido', granted:true },
         { icon:'✏️', label:'Editar contenido', granted:true },
         { icon:'👥', label:'Gestionar usuarios', granted:false },
         { icon:'⚙️', label:'Configuración', granted:false },
       ],
       publico: [
-        { icon:'👁', label:'Ver contenido', granted:true },
+        { icon:'🔍', label:'Ver contenido público', granted:true },
         { icon:'✏️', label:'Editar contenido', granted:false },
-        { icon:'👥', label:'Gestionar usuarios', granted:false },
+        { icon:'👥', label:'Lista usuarios', granted:false },
         { icon:'⚙️', label:'Configuración', granted:false },
       ]
     };
 
     function renderDashboard(user) {
-      document.getElementById('loginCard').style.display='none';
+      document.getElementById('loginCard').style.display = 'none';
       document.getElementById('dashCard').classList.add('active');
 
-      const titles = { admin:'Panel Admin', trabajador:'Panel Trabajador', publico:'Panel Público' };
-      document.getElementById('dashTitle').textContent = titles[user.role];
+      const titles = { admin: '🎛️ Panel Administrador', trabajador: '🛠️ Panel Trabajador', publico: '👁️ Panel Público' };
+      document.getElementById('dashTitle').innerHTML = titles[user.role];
 
       const badge = document.getElementById('dashBadge');
       badge.textContent = user.role.toUpperCase();
@@ -712,19 +665,20 @@
       document.getElementById('dTime').textContent = new Date().toLocaleString('es-MX');
 
       // Permisos
+      const perms = PERMS[user.role];
       const grid = document.getElementById('permsGrid');
-      grid.innerHTML = PERMS[user.role].map(p => `
-        <div class="perm-card ${p.granted?'granted':'denied'}">
-          <span class="perm-icon">${p.granted?p.icon:'🚫'}</span>
+      grid.innerHTML = perms.map(p => `
+        <div class="perm-card ${p.granted ? 'granted' : 'denied'}">
+          <span class="perm-icon">${p.granted ? p.icon : '🚫'}</span>
           <span>${p.label}</span>
         </div>
       `).join('');
 
-      // Panel admin
+      // Panel admin: listado de usuarios
       if (user.role === 'admin') {
-        document.getElementById('adminPanel').style.display='block';
-        const list = document.getElementById('usersList');
-        list.innerHTML = DB.users.map(u => `
+        document.getElementById('adminPanel').style.display = 'block';
+        const usersContainer = document.getElementById('usersList');
+        usersContainer.innerHTML = DB.users.map(u => `
           <div class="user-item">
             <div class="user-item-left">
               <div class="user-avatar av-${u.role}">${u.name.charAt(0).toUpperCase()}</div>
@@ -737,20 +691,25 @@
           </div>
         `).join('');
       } else {
-        document.getElementById('adminPanel').style.display='none';
+        document.getElementById('adminPanel').style.display = 'none';
       }
     }
 
-    // ── LOGOUT ────────────────────────────────────────────────────────
     function doLogout() {
       document.getElementById('dashCard').classList.remove('active');
-      document.getElementById('loginCard').style.display='block';
-      document.getElementById('loginUser').value='';
-      document.getElementById('loginPass').value='';
-      document.getElementById('loginHashPreview').textContent='—';
-      document.getElementById('loginHashPreview').className='hash-preview';
+      document.getElementById('loginCard').style.display = 'block';
+      document.getElementById('loginUser').value = '';
+      document.getElementById('loginPass').value = '';
       hideAlert('loginAlert');
+      hideAlert('dashAlert');
     }
+
+    // ----- INICIALIZACIÓN CORRECTA DE HASHS DEMO -----
+    window.addEventListener('DOMContentLoaded', async () => {
+      await fixDemoPasswords();   // actualiza los hash de admin, trabajador1, usuario1
+      // opcional: podemos mostrar un pequeño mensaje en consola que todo está listo
+      console.log('✅ Sistema listo. Credenciales demo: admin/admin , trabajador1/1test , usuario1/password');
+    });
   </script>
 </body>
 </html>

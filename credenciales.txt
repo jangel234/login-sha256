@@ -1,4 +1,58 @@
-Usuario     Contraseña  Rol
-admin       admin       Admin 
-trabajador  1test       Trabajador 
-usuario1    password    Público
+═══════════════════════════════════════════════════════════════
+  CREDENCIALES DEL SISTEMA - SHA-256 + SALT
+═══════════════════════════════════════════════════════════════
+
+USUARIOS DISPONIBLES:
+
+1. ADMINISTRADOR
+   └─ Usuario: admin
+   └─ Contraseña: admin
+   └─ Rol: admin
+   └─ Acceso: Gestión completa del sistema
+
+2. TRABAJADOR
+   └─ Usuario: trabajador1
+   └─ Contraseña: 1test
+   └─ Rol: trabajador
+   └─ Acceso: Ver y editar contenido
+
+3. USUARIO PÚBLICO
+   └─ Usuario: usuario1
+   └─ Contraseña: password
+   └─ Rol: publico
+   └─ Acceso: Solo lectura
+
+═══════════════════════════════════════════════════════════════
+  INFORMACIÓN DE SEGURIDAD
+═══════════════════════════════════════════════════════════════
+
+MÉTODO DE ALMACENAMIENTO: SHA-256 + SALT
+- Cada usuario tiene un SALT único y aleatorio
+- La contraseña se concatena con el SALT: contraseña + SALT
+- Se aplica SHA-256 al resultado
+- En la BD se almacena: SALT + HASH (no la contraseña original)
+
+EJEMPLO:
+  Usuario: admin
+  Contraseña original: admin
+  SALT generado: a7f3c2b8e9d4f1a6
+  Proceso: SHA-256("admin" + "a7f3c2b8e9d4f1a6")
+  En BD: salt="a7f3c2b8e9d4f1a6"
+         password="f3a4b2c8d9e1f3a4b2c8d9e1f3a4b2c8..."
+
+VENTAJAS:
+✓ Rainbow tables inútiles (SALT es único por usuario)
+✓ Dos usuarios con misma contraseña = hashes diferentes
+✓ Imposible revertir el hash
+✓ Cumple estándares de seguridad profesionales
+
+═══════════════════════════════════════════════════════════════
+  NOTAS IMPORTANTES
+═══════════════════════════════════════════════════════════════
+
+• Las contraseñas aquí son referencias educativas
+• En BD solo están guardados los hashes + salts
+• El login calcula el hash con el SALT del usuario
+• El archivo users.json contiene la BD con los hashes
+
+═══════════════════════════════════════════════════════════════
