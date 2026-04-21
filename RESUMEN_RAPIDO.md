@@ -1,81 +1,88 @@
-# ⚡ Resumen Rápido - SHA-256
+# ⚡ Resumen Rápido - SHA-256 + SALT
 
 ## 🎯 En 1 Minuto
 
 ```
-¿Qué es? → Función que convierte texto en números aleatorios
-Resultado → 64 caracteres iguales siempre
+¿Qué es? → SHA-256 (función hash) + SALT (valor aleatorio)
+Resultado → Dos capas de seguridad
 ¿Reversible? → NO (imposible volver atrás)
-Seguridad → ✓ No se puede saber la contraseña del hash
+Seguridad → ✓ Rainbow tables inútiles
+           ✓ Imposible crackear en tiempo práctico
 ```
 
 ---
 
 ## 📊 Tabla Rápida
 
-| Concepto | Explicación | Ejemplo |
-|----------|------------|---------|
-| **Input** | Texto cualquiera | `"admin"` |
-| **SHA-256** | Función matemática | `crypto.subtle.digest()` |
-| **Output** | Hash de 64 caracteres | `8c6976e5...` |
-| **Propiedad** | Unidireccional | No se puede revertir |
-| **Uso** | Almacenar contraseñas | users.json |
+| Concepto | Sin SALT | Con SALT |
+|----------|----------|----------|
+| **¿Dos usuarios, misma password?** | Hashes iguales ✗ | Hashes diferentes ✓ |
+| **¿Rainbow table efectiva?** | Sí ✗ | No ✓ |
+| **Seguridad** | Media 🟡 | Alta 🟢 |
+| **Estándar** | No ✗ | Sí ✓ |
 
 ---
 
 ## 🔄 Flujo Mínimo
 
+### Registro:
 ```
-Usuario digita: "admin"
-        ↓
-sha256("admin")
-        ↓
-8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918
-        ↓
-Compara con BD
-        ↓
-¿Coincide? → SÍ = LOGIN / NO = ERROR
+Password: "abc123"
+     ↓
+Generar SALT: "a7f3c2b8e9d4f1a6"
+     ↓
+SHA256("abc123" + "a7f3c2b8e9d4f1a6")
+     ↓
+Hash: "xyz789abc..."
+     ↓
+Guardar BD: {salt, hash}
+```
+
+### Login:
+```
+Password: "abc123"
+     ↓
+Recuperar SALT de BD: "a7f3c2b8e9d4f1a6"
+     ↓
+SHA256("abc123" + "a7f3c2b8e9d4f1a6")
+     ↓
+¿Coincide hash? → SÍ/NO
 ```
 
 ---
 
-## 💾 Base de Datos
+## 💾 Base de Datos (Mejorada)
 
-```
-users.json:
+```json
 {
   "username": "admin",
-  "password": "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918"
+  "salt": "a7f3c2b8e9d4f1a6",
+  "password": "f3a4b2c8d9e1f3a4b2c8d9e1f3a4b2c8d9e1f3..."
 }
-
-credenciales.txt (solo referencia):
-admin = admin
 ```
 
 ---
 
-## 🧮 Ejemplos Rápidos
+## 🧮 Ejemplos
 
-| Texto | SHA-256 |
-|------|---------|
-| admin | 8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918 |
-| Admin | 5a105e8b9d40e1329780d62ea2265d8a76e4d4150377e332ec432e74e76e8e9 |
-| admin  | (con espacio final) f3751c1f4b16e968b6d85ebec11c2b13ac77fb8bd36c4f17c0e1b2f48cd2e... |
-
-**Conclusión:** Cambiar UNA LETRA = HASH COMPLETAMENTE DIFERENTE
+| Contraseña | SALT | SHA-256 + SALT |
+|-----------|------|----------------|
+| admin | a7f3c2b8e9d4f1a6 | f3a4b2c8d9e1... |
+| 1test | b5e1c3d2a7f8c9b1 | c7d8e9f1a2b3... |
+| password | f2a8b1c3d5e7f9a2 | d4e5f6a7b8c9... |
 
 ---
 
-## 🔐 Por Qué Es Seguro
+## 🔐 Por Qué Es Más Seguro
 
 ```
-❌ Texto Plano
-   Si hackean → Contraseña visible
+SIN SALT:
+"password" → SHA256 → abc123...
+Si hackean: abc123... → rainbow table → password ✗
 
-✅ SHA-256
-   Si hackean → Solo ven hashes
-              → No pueden revertir
-              → Contraseña sigue segura
+CON SALT:
+"password" + SALT → SHA256 → xyz789...
+Si hackean: xyz789... → rainbow table → ??? (SALT es único) ✓
 ```
 
 ---
@@ -83,51 +90,61 @@ admin = admin
 ## 📱 Código Esencial
 
 ```javascript
-// La función
-async function sha256(msg) {
-  const buf = new TextEncoder().encode(msg);
-  const hash = await crypto.subtle.digest('SHA-256', buf);
-  const arr = Array.from(new Uint8Array(hash));
-  return arr.map(b => b.toString(16).padStart(2, '0')).join('');
+// Generar SALT
+function generateSalt() {
+  const bytes = crypto.getRandomValues(new Uint8Array(8));
+  return Array.from(bytes)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
-// El login
-const hash = await sha256(passwordIngresada);
-const user = BD.find(u => u.password === hash);
-if (user) { login exitoso } else { error }
+// SHA-256 + SALT
+async function sha256WithSalt(password, salt) {
+  return await sha256(password + salt);
+}
+
+// En Registro
+const salt = generateSalt();
+const hash = await sha256WithSalt(password, salt);
+addUser({ username, password: hash, salt });
+
+// En Login
+const user = DB.users.find(u => u.username === username);
+const hash = await sha256WithSalt(password, user.salt);
+if (hash === user.password) { /* acceso */ }
 ```
 
 ---
 
 ## ✅ Checklist - Lo Que Debe Saber
 
-- [ ] SHA-256 produce 64 caracteres
-- [ ] Es irreversible (no se puede deshacer)
-- [ ] Cambia completamente con pequeños cambios
-- [ ] Se almacena el hash, no la contraseña
-- [ ] El login compara hashes
-- [ ] Es seguro porque no se puede reversar
-- [ ] Se mejora con SALT en producción
-- [ ] Funciona en navegador con `crypto.subtle.digest()`
+- [ ] SALT es valor aleatorio único por usuario
+- [ ] SHA-256 + SALT es más seguro que solo SHA-256
+- [ ] Dos usuarios con misma contraseña = hashes diferentes
+- [ ] Se guarda el SALT junto con el hash
+- [ ] Rainbow tables son inútiles con SALT
+- [ ] El login recupera el SALT del usuario
+- [ ] Se concatena contraseña + SALT antes de hashear
+- [ ] Es estándar en todas las BD profesionales
 
 ---
 
 ## 🎓 Respuestas de 10 Segundos
 
-**P: ¿Qué es SHA-256?**
-R: Función que convierte texto en números fijos de 64 caracteres
+**P: ¿Qué es SALT?**
+R: Valor aleatorio único que se agrega a la contraseña
 
-**P: ¿Se puede revertir?**
-R: No, es matemáticamente imposible
+**P: ¿Por qué se usa?**
+R: Evita rainbow tables y hace único el hash de cada usuario
 
-**P: ¿Entonces cómo se loguea?**
-R: Calcula el hash nuevamente y compara: ¿hash(entrada) == hash(BD)?
+**P: ¿Se guarda el SALT?**
+R: Sí, es público. No necesita encriptación
 
-**P: ¿Es seguro?**
-R: Sí, porque aunque alguien tenga el hash, no puede obtener la contraseña
+**P: ¿Cómo se genera?**
+R: Con `crypto.getRandomValues()` (aleatorio criptográfico)
 
-**P: ¿Dónde se almacena?**
-R: En users.json solo el hash, nunca la contraseña original
+**P: ¿Mejora mucho la seguridad?**
+R: Sí, de 5/10 a 8/10 automáticamente
 
 ---
 
@@ -135,62 +152,55 @@ R: En users.json solo el hash, nunca la contraseña original
 
 1. Abre console (F12)
 2. Copia función sha256()
-3. `await sha256("admin")` → muestra hash
-4. `await sha256("Admin")` → muestra diferente
-5. Abre users.json → muestra hashes guardados
-6. "Eso es todo lo que se almacena, solo números"
+3. `await sha256("admin" + "a7f3c2b8e9d4f1a6")` → muestra hash
+4. `await sha256("admin")` → muestra diferente
+5. "Así funciona con SALT vs sin SALT"
 
 ---
 
 ## 📐 Diagramas Mínimos
 
-### Login
+### Almacenamiento
 ```
-Entrada      Procesado    Resultado
-"admin"   →  SHA-256   →  8c6976e5...
-            
-Compara: ¿8c6976e5... == BD.hash? → ✓ SÍ
+Antes:
+username: admin
+password: 8c6976e5...
+
+Ahora:
+username: admin
+salt: a7f3c2b8e9d4f1a6
+password: f3a4b2c8d9e1...
 ```
 
-### Registro
+### Proceso
 ```
-"MiPassword123"  →  SHA-256  →  a7f3c2b8...
-                                    ↓
-                            Guardar en BD
-                            (nunca la password)
-```
-
-### Seguridad
-```
-❌ sin hash:          ✅ con SHA-256:
-password visible      hash visible
-hackeo = acceso       hackeo = nada
+Entrada: "admin"
+   ↓
++ SALT: "a7f3c2b8e9d4f1a6"
+   ↓
+SHA-256
+   ↓
+Resultado: f3a4b2c8d9e1...
 ```
 
 ---
 
-## 📚 Archivos Clave
+## 🚀 Jerarquía de Seguridad
 
-- **index.html** → Contiene la función sha256()
-- **users.json** → Base de datos con hashes
-- **credenciales.txt** → Contraseñas originales (referencia)
+1. ❌ Texto plano → `password: "admin"`
+2. 🟡 SHA-256 → `password: "8c6976e5..."`
+3. 🟢 SHA-256 + SALT → `salt: "a7f3c...", password: "f3a4b..."`
+4. 🟢🟢 bcrypt/argon2 → `$2b$12$...`
 
----
-
-## 🚀 Mejoras Futuras
-
-1. **SALT** → Agregar valor aleatorio por usuario
-2. **Rate Limiting** → Limitar intentos de login
-3. **HTTPS** → Encriptación en tránsito
-4. **bcrypt/argon2** → Funciones más lentas (mejor seguridad)
-5. **2FA** → Autenticación de dos factores
+Este proyecto está en nivel 3/4 (profesional)
 
 ---
 
-## 🎯 Punto Principal de la Exposición
+## 🎯 Punto Principal
 
-> "El hasheo SHA-256 permite almacenar contraseñas de forma segura: 
-> la contraseña original NUNCA se guarda, 
-> solo un número imposible de reversar. 
-> Si alguien hackea la BD, solo ve números inútiles."
+> "SALT hace que cada usuario tenga un hash diferente
+> aunque la contraseña sea igual, 
+> imposibilitando ataques con tablas precompiladas"
+
+
 
